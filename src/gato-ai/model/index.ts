@@ -36,10 +36,13 @@ const standaloneQuestionChain = RunnableSequence.from([
 const retrieverChain = RunnableSequence.from([
   standaloneQuestionChain,
   retiever,
-  docs =>
-    docs
+  docs => {
+    const combined = docs
       .map((doc: any) => `${doc.pageContent} (${doc.metadata.source})`)
-      .join(`\n\n`)
+      .join(`\n\n`);
+
+    return combined;
+  }
 ]);
 
 const answerChain = RunnableSequence.from([
@@ -53,11 +56,23 @@ const modelChain = RunnableSequence.from([
     question: ({ question }) => question,
     context: retrieverChain
   },
+  {
+    question: ({ question }) => question,
+    context: ({ context }) => context
+  },
   answerChain
 ]);
 
 export const gatoAI = async (question: string) => {
   const answer = await modelChain.invoke({
+    question
+  });
+
+  return answer;
+};
+
+export const gatoAiStream = async (question: string) => {
+  const answer = await modelChain.stream({
     question
   });
 

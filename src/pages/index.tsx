@@ -12,6 +12,30 @@ export default function Home() {
     setAnswer(data.answer);
   };
 
+  const [tokens, setTokens] = useState<string[]>([]);
+
+  const callGatoAIStream = async (q: string) => {
+    setTokens([]);
+
+    const response = await fetch(`/api/gato-ai-stream?question=${q}`);
+    const reader = response.body?.getReader();
+
+    if (!reader) return;
+
+    let done = false;
+
+    while (!done) {
+      const { value, done: d } = await reader.read();
+
+      if (value) {
+        const text = new TextDecoder().decode(value);
+        setTokens(prev => [...prev, text]);
+      }
+
+      done = d;
+    }
+  };
+
   return (
     <>
       <Input
@@ -21,8 +45,10 @@ export default function Home() {
       />
 
       <Button onClick={() => callGatoAI(question)}>Ask</Button>
+      <Button onClick={() => callGatoAIStream(question)}>Ask (stream)</Button>
 
       <Text>{answer}</Text>
+      <Text>{tokens.join("")}</Text>
     </>
   );
 }
